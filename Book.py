@@ -1,5 +1,6 @@
 import re
 from Genre import Genre
+from connect_mysql import connect_database
 
 isbn_regex = r'\d{13}'
 date_regex = r'^\d{2}-\d{2}-\d{4}'
@@ -11,13 +12,20 @@ class SetterException(Exception):
     pass
 
 class Book(Genre):
-    def __init__(self, genre_name, fict_or_nonfict, description, title, author, isbn, publication_date):
+    def __init__(self, genre_name, fict_or_nonfict, description, book_id, title, author, isbn, publication_date):
         super().__init__(genre_name, fict_or_nonfict, description)
+        self.__book_id = book_id
         self.__title = title
         self.__author = author
         self.__isbn = isbn
         self.__publication_date = publication_date
         self.__availability_status = True
+
+    def get_book_id(self):
+        return self.__book_id
+    
+    def set_book_id(self, new_book_id):
+        self.__book_id = new_book_id
 
     def get_title(self):
         return self.__title
@@ -69,35 +77,70 @@ class Book(Genre):
         except:
             raise SetterException("Please use boolean when adjusting availability status")
     
-    def borrow_book(self):
-        if self.get_availability_status() == True:
-            self.set_availability_status(False)
-            print(f"{self.get_title()} by {self.get_author()} has succesfully been borrowed")
-            return True
+    def borrow_book(self, user_id, borrow_date):
+        conn = connect_database()
+        if self.get_availability_status() == True and conn is not None:
+            try:
+                self.set_availability_status(False)
+                cursor = conn.cursor()
+                query = "UPDATE Books SET availability=%s WHERE id=%s"
+                values_tuple = (self.get_availability_status(), self.get_book_id())
+                cursor.execute(query, values_tuple)
+                conn.commit()
+                new_rental = (user_id, self.get_book_id(), borrow_date)
+                insert_query = "INSERT INTO BorrowedBooks (user_id, book_id, borrow_date) VALUES (%s, %s, %s)"
+                cursor.execute(insert_query, new_rental)
+                conn.commit()                
+                print(f"{self.get_title()} by {self.get_author()} has succesfully been borrowed")
+            except Exception as e:
+                print(f"Error: {e}")
+            finally:
+                cursor.close()
+                conn.close()
         else:
-            print(f"All copies of {self.get_title()} by {self.get_author()} have already been borrowed and are currently unavailable for rental")
-            return False
-        
-    def return_book(self):
-        if self.get_availability_status() == False:
-            self.set_availability_status(True)
-            print(f"{self.get_title()} by {self.get_author()} has been returned and is now availavle to be borrowed")
-            return True
+                print(f"All copies of {self.get_title()} by {self.get_author()} have already been borrowed and are currently unavailable for rental")
+                return False
+            
+    def return_book(self, user_id, rental_id, return_date):
+        conn = connect_database()
+        if self.get_availability_status() == False and conn is not None:
+            try:
+                self.set_availability_status(True)
+                cursor = conn.cursor()
+                query = "UPDATE Books SET availability=%s WHERE id=%s"
+                values_tuple = (self.get_availability_status(), self.get_book_id())
+                cursor.execute(query, values_tuple)
+                conn.commit()
+                return_query = "Update BorrowedBooks SET return_date=%s WHERE id=%s AND book_id=%s AND user_id=%s"
+                return_tuple = (return_date, rental_id, self.get_book_id(), user_id)
+                cursor.execute(return_query, return_tuple)
+                conn.commit()
+                print(f"{self.get_title()} by {self.get_author()} has been returned and is now availavle to be borrowed")
+            except Exception as e:
+                print(f"Error: {e}")
+            finally:
+                cursor.close()
+                conn.close()
         else:
             print(f"{self.get_title()} was already available and had not been borrowed, thus it can't be returned.")
             return False
         
     def display_details(self):
-        print(f"Title: {self.get_title()}\nAuthor: {self.get_author()}\nISBN: {self.get_isbn()}\nPublication Date: {self.get_publication_date()}\nAvailable to Borrow: {self.get_availability_status()}\nGenre: {self.get_genre_name()}\nGenre Type: {self.get_fict_or_nonfict()}\nGenre Description: {self.get_description()}")
+        conn = connect_database()
+        if conn is not None:
+            try:
+                cursor = conn.cursor()
+                query = "SELECT b.id as BooksID, b.title, a.name as AuthorName, g.name as Genre, g.fict_or_nonfict, b.isbn, b.publication_date, b.availability FROM Books b, Authors a, Genres g WHERE b.author_id=a.id AND b.genre_id=g.id"
+                cursor.execute(query)
+                print("Book Details:")
+                for row in cursor.fetchall():
+                    print(row)
+            except Exception as e:
+                print(f"Error: {e}")
+            finally:
+                cursor.close()
+                conn.close()
 
 '''
-The Book module starts with imports for both re (for regex validation) and of the Genre class from the Genre module.  I then copy over regex patterns for ISBN, names, book titles, and dates.
-I then define the SetterException custom exception class. The Book class starts with the Genre class in parentheses as Genre is its parents class. Likewise when we define Books init method it includes the variables needed to instantiate
-a Genre class as well, and then has the super.__init__ syntax inside of it. I then have variables for title, author, isbn, publication date, and a Boolean for availability status that is set to always start as True
-I have getters for each of the 5 variables specific to the book class and regex validated setters for them as well. Notably unique for the set_availability_status setter I use an if statement followed
-by the built in isinstance() function to ensure that the new_status being used is a True or False boolean and if it is inot we raise our custom SetterException. I then define the borrrow_book method which first checks if
-get_availability_status() method will return as true for the object we are calling it on. If it does we can then use the availability status setter calling it with a False boolean and printing the result before returning a True result.
-In the else statement I print a message stating that the book is unavailable to be borrowed and return a False boolean. In return book I use the exact same logic flipped to ensure that the book being returned is returning as a False boolean using the getter
-beofre setting its new status to a True boolean. Once I do this I print the result and return a True output for the method. Otherwise I print that the book was already available and return a False output.
-Lastly the display_details() method uses getters to print through every piece of information each book object has including all 5 variables specific to the Book class and the 3 variables it inherits from its parent Genre class.
+-
 '''
