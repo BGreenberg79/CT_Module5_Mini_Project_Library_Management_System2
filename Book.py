@@ -3,7 +3,7 @@ from Genre import Genre
 from connect_mysql import connect_database
 
 isbn_regex = r'\d{13}'
-date_regex = r'^\d{2}-\d{2}-\d{4}'
+date_regex = r'^\d{4}-\d{2}-\d{2}'
 name_regex = r"^[A-Z][a-zA-Z'-]+ [A-Z][a-zA-Z'-]+$"
 book_title_regex = r"^[A-Za-z0-9\s\-_,\.;:()]+$"
 
@@ -12,20 +12,13 @@ class SetterException(Exception):
     pass
 
 class Book(Genre):
-    def __init__(self, genre_name, fict_or_nonfict, description, book_id, title, author, isbn, publication_date):
+    def __init__(self, genre_name, fict_or_nonfict, description, title, author, isbn, publication_date):
         super().__init__(genre_name, fict_or_nonfict, description)
-        self.__book_id = book_id
         self.__title = title
         self.__author = author
         self.__isbn = isbn
         self.__publication_date = publication_date
         self.__availability_status = True
-
-    def get_book_id(self):
-        return self.__book_id
-    
-    def set_book_id(self, new_book_id):
-        self.__book_id = new_book_id
 
     def get_title(self):
         return self.__title
@@ -77,17 +70,17 @@ class Book(Genre):
         except:
             raise SetterException("Please use boolean when adjusting availability status")
     
-    def borrow_book(self, user_id, borrow_date):
+    def borrow_book(self, user_id, borrow_date, book_id):
         conn = connect_database()
         if self.get_availability_status() == True and conn is not None:
             try:
                 self.set_availability_status(False)
                 cursor = conn.cursor()
                 query = "UPDATE Books SET availability=%s WHERE id=%s"
-                values_tuple = (self.get_availability_status(), self.get_book_id())
+                values_tuple = (self.get_availability_status(), book_id)
                 cursor.execute(query, values_tuple)
                 conn.commit()
-                new_rental = (user_id, self.get_book_id(), borrow_date)
+                new_rental = (user_id, book_id, borrow_date)
                 insert_query = "INSERT INTO BorrowedBooks (user_id, book_id, borrow_date) VALUES (%s, %s, %s)"
                 cursor.execute(insert_query, new_rental)
                 conn.commit()                
@@ -101,18 +94,18 @@ class Book(Genre):
                 print(f"All copies of {self.get_title()} by {self.get_author()} have already been borrowed and are currently unavailable for rental")
                 return False
             
-    def return_book(self, user_id, rental_id, return_date):
+    def return_book(self, book_id, user_id, rental_id, return_date):
         conn = connect_database()
         if self.get_availability_status() == False and conn is not None:
             try:
                 self.set_availability_status(True)
                 cursor = conn.cursor()
                 query = "UPDATE Books SET availability=%s WHERE id=%s"
-                values_tuple = (self.get_availability_status(), self.get_book_id())
+                values_tuple = (self.get_availability_status(), book_id)
                 cursor.execute(query, values_tuple)
                 conn.commit()
                 return_query = "Update BorrowedBooks SET return_date=%s WHERE id=%s AND book_id=%s AND user_id=%s"
-                return_tuple = (return_date, rental_id, self.get_book_id(), user_id)
+                return_tuple = (return_date, rental_id, book_id, user_id)
                 cursor.execute(return_query, return_tuple)
                 conn.commit()
                 print(f"{self.get_title()} by {self.get_author()} has been returned and is now availavle to be borrowed")
@@ -135,6 +128,22 @@ class Book(Genre):
                 print("Book Details:")
                 for row in cursor.fetchall():
                     print(row)
+            except Exception as e:
+                print(f"Error: {e}")
+            finally:
+                cursor.close()
+                conn.close()
+    
+    def add_book_to_database(self, author_id, genre_id):
+        conn = connect_database()
+        if conn is not None:
+            try:
+                cursor = conn.cursor()
+                query = "INSERT INTO Books (title, author_id, genre_id, isbn, publication_date, availability) VALUES (%s, %s, %s, %s, %s, %s)"
+                values_tuple = (self.get_title(), author_id, genre_id, self.get_isbn(), self.get_publication_date(), self.get_availability_status())
+                cursor.execute(query, values_tuple)
+                conn.commit()
+                print(f"{self.get_title()} has been added to the Books table")
             except Exception as e:
                 print(f"Error: {e}")
             finally:

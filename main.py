@@ -3,21 +3,22 @@ from Book import Book
 from User import User
 from Author import Author
 from Genre import Genre
+from fetch_and_check import fetch_genre_names, fetch_isbn_numbers, fetch_author_id, fetch_genre_id, fetch_author_list, fetch_book_id_from_isbn, get_book_object_from_table, fetch_card_numbers, fetch_user_id_from_card_number
 
 ''' Here we import each module for each of the 4 classes our main program will feature: Book, User, Author, and Genre. We also import the regular expression module.'''
 
 input_regex = r'^\d{1}$'
 isbn_regex = r'\d{13}'
-date_regex = r'^\d{2}-\d{2}-\d{4}'
+date_regex = r'^\d{4}-\d{2}-\d{2}'
 name_regex = r"^[A-Z][a-zA-Z'-]+ [A-Z][a-zA-Z'-]+$"
 book_title_regex = r"^[A-Za-z0-9\s\-_,\.;:()]+$"
 genre_regex = r"^[A-Za-z '\-]+$"
 fiction_regex = r'fiction|non-fiction|Fiction|Non-Fiction'
 
-library_dictionary = {}
-user_dictionary = {}
-author_list = []
-genre_list = []
+book_object_set = set()
+user_object_set = set()
+author_object_set = set()
+genre_object_set = set()
 
 ''' 
 Here I globally define regular expressions for menu input, ISBN numbers, publishing an birthdates, author and user names, book title, genres, and fiction vs. non-fiction'.
@@ -32,10 +33,10 @@ def book_operations_menu():
     global book_title_regex
     global genre_regex
     global fiction_regex
-    global library_dictionary
-    global user_dictionary
-    global author_list
-    global genre_list
+    global book_object_set
+    global user_object_set
+    global author_object_set
+    global genre_object_set
     while True:
         book_title_message = "\nBooks Operations:"
         print(book_title_message)
@@ -46,70 +47,76 @@ def book_operations_menu():
                     book_title = input("Enter title of book you are adding to library: ")
                     author_name = input("Enter author of book: ").title()
                     isbn = input("Enter 13 digit ISBN number (remove hyphens): ")
-                    publication_date = input("Enter publication date (MM-DD-YYYY): ")
+                    publication_date = input("Enter publication date (YYYY-MM-DD): ")
                     genre_name = input("What is this book's genre: ").title()
-                    genre_name_list = [genre.get_genre_name() for genre in genre_list]
-                    if genre_name in genre_name_list:
-                        for genre in genre_list:
-                            if genre.get_genre_name() == genre_name:
-                                genre_type = genre.get_fict_or_nonfict()
-                                genre_descript = genre.get_description()
-                                if book_title not in genre_list[genre_list.index(genre)].get_books_in_genre():
-                                    genre_list[genre_list.index(genre)].add_books_in_genre(book_title)
-                                    print(f"{book_title} was added to {genre_list[genre_list.index(genre)].get_genre_name()} book list")
-                    if genre_name not in genre_name_list:
-                        genre_type = input("Please enter if this genre is best categorized as Fiction or Non-Fiction: ").title()
-                        genre_descript = input("Please enter a brief description of this genre: ")
-                        if re.match(genre_regex, genre_name) and re.match(fiction_regex, genre_type):
-                            new_genre = Genre(genre_name, genre_type, genre_descript)
-                            if new_genre not in genre_list:
-                                genre_list.append(new_genre)
-                                if book_title not in new_genre.get_books_in_genre():
-                                    new_genre.add_books_in_genre(book_title)
-                                    print(f"{book_title} was added to {new_genre.get_genre_name()} book list")
-                    if isbn not in library_dictionary.keys():
-                        if re.match(book_title_regex, book_title) and re.match(name_regex, author_name) and re.match(isbn_regex, isbn) and re.match(date_regex, publication_date):
-                            library_dictionary[isbn] = Book(genre_name, genre_type, genre_descript, book_title, author_name, isbn, publication_date)
-                            print(f"{book_title} by {author_name} with ISBN number {isbn} has been added to Library Management System database")
-                            author_name_list = [author.get_author_name() for author in author_list]
-                            if author_name not in author_name_list:
-                                author_home_country = input("Please enter their country of birth: ")
-                                author_new_dob = input("Now please enter their date of birth in MM-DD-YYYY format: ")
-                                if re.match(date_regex, author_new_dob):
-                                    new_author = Author(author_name, author_home_country, author_new_dob)
-                                    author_list.append(new_author)
-                                    new_author.add_authored_book(library_dictionary[isbn])
-                            elif author_name in author_name_list:
-                                for author in author_list:
-                                    if author.get_author_name() == author_name:
-                                        author.add_authored_book(library_dictionary[isbn])                       
+                    genre_type = input("Please enter if this genre is best categorized as Fiction or Non-Fiction: ").title()
+                    genre_descript = input("Please enter a brief description of this genre: ")
+                    if re.match(genre_regex, genre_name) and re.match(fiction_regex, genre_type):
+                        new_genre = Genre(genre_name, genre_type, genre_descript)
+                        genre_name_list = [genre.get_genre_name() for genre in genre_object_set]
+                        if new_genre.get_genre_name() not in genre_name_list:
+                            genre_object_set.add(new_genre)
+                        if new_genre.get_genre_name() not in fetch_genre_names():
+                            new_genre.add_genre_to_table()
+                        else:
+                            print(f"The genre {new_genre.get_genre_name()} is already in our database")
                     else:
-                        print(f"{book_title} by {author_name} with ISBN number {isbn} has already been added to our system")
+                        print("Please enter a valid genre name and Fiction or Non-Fiction only in inputs")
+                    author_home_country = input("Please enter their country of birth: ")
+                    author_new_dob = input("Now please enter their date of birth in YYYY-MM-DD format: ")
+                    if re.match(date_regex, author_new_dob):
+                        new_author = Author(author_name, author_home_country, author_new_dob)
+                        author_name_country_list = [(author.get_author_name(), author.get_home_country()) for author in author_object_set]
+                        if (new_author.get_author_name(), new_author.get_home_country()) not in author_name_country_list:
+                            author_object_set.add(new_author)
+                        if (new_author.get_author_name(), new_author.get_home_country()) not in fetch_author_list():
+                            new_author.add_author_to_table()
+                        else:
+                            print(f"{new_author.get_author_name()} from {new_author.get_home_country()} is already in our database")
+                    else:
+                        print("Pleae enter author's date of birth in valid format (YYYY-MM-DD)")
+                    if re.match(book_title_regex, book_title) and re.match(name_regex, author_name) and re.match(isbn_regex, isbn) and re.match(date_regex, publication_date):
+                        new_book = Book(genre_name, genre_type, genre_descript, book_title, author_name, isbn, publication_date)
+                        book_isbn_list = [book.get_isbn() for book in book_object_set]
+                        if new_book.get_isbn() not in book_isbn_list:
+                            book_object_set.add(new_book)
+                        if new_book.get_isbn() not in fetch_isbn_numbers():
+                            author_id = fetch_author_id(author_name, author_home_country)
+                            genre_id = fetch_genre_id(genre_name)
+                            new_book.add_book_to_database(author_id, genre_id)
+                        else:
+                            print(f"{new_book.get_title()} with ISBN {new_book.get_isbn()} is already in our database")   
+                    else:
+                        print("Please ensure all inputs are in valid formats.")
                 except Exception as e:
                     print(f"Error: {e}")
             elif book_menu_input == "2":
                 try:
                     rental_isbn = input("Enter ISBN of book you wish to rent: ")
                     if re.match(isbn_regex, rental_isbn):
-                        if rental_isbn in library_dictionary.keys():
-                            if library_dictionary[rental_isbn].get_availability_status() == True:
-                                library_dictionary[rental_isbn].borrow_book()
-                                renter_id = input("Enter (or create) your Library ID number here: ")
-                                if renter_id in user_dictionary.keys():
-                                    user_dictionary[renter_id].add_to_currently_borrowed_list(library_dictionary[rental_isbn])
-                                else:
-                                    renter_name = input("We are setting up your new account, please enter your name here: ")
-                                    if re.match(name_regex, renter_name):
-                                        user_dictionary[renter_id] = User(renter_name, renter_id)
-                                        user_dictionary[renter_id].add_to_currently_borrowed_list(library_dictionary[rental_isbn])
-                            else:
-                                print("Book is unavailable for rental")
+                        if rental_isbn in fetch_isbn_numbers():
+                            rental_book_id = fetch_book_id_from_isbn(rental_isbn)
+                            rental_book = get_book_object_from_table(rental_book_id)
+                            card_num = input("Enter (or create) your Library card number here: ")
+                            borrow_date = input("Please enter the date you borrowed this book: ")
+                            if card_num not in fetch_card_numbers():
+                                renter_name = input("We are setting up your new account, please enter your name here: ")
+                                if re.match(name_regex, renter_name):
+                                    new_user = User(renter_name, card_num)
+                                    new_user.add_user_to_table()
+                                    card_num_list = [user.get_card_number() for user in user_object_set]
+                                    if new_user.get_card_number() not in card_num_list:
+                                        user_object_set.add(new_user)
+                            rental_user_id = fetch_user_id_from_card_number(card_num)
+                            rental_book.borrow_book(rental_user_id, borrow_date, rental_book_id)
                         else:
                             print("Please ensure book with this ISBN number has been added to library before attempting to borrow it")
-                except KeyError:
-                    print("Please ensure book with this ISBN number has been added to the library.")
+                    else:
+                        print("Please ensure ISBN entered in proper format")
                 except Exception as e:
                     print(f"Error: {e}")
+                    #Code should be sound to this point
+                    #Start from Book menu input 3
             elif book_menu_input == "3":
                 try:
                     return_isbn = input("Enter ISBN for book you wish to return to library: ")

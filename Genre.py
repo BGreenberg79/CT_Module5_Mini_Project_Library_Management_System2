@@ -1,4 +1,6 @@
 import re
+from connect_mysql import connect_database
+
 genre_regex = r"^[A-Za-z '\-]+$"
 fiction_regex = r'fiction|non-fiction|Fiction|Non-Fiction'
 
@@ -15,7 +17,6 @@ class Genre:
         self.__genre_name = genre_name
         self.__fict_or_nonfict = fict_or_nonfict
         self.__description = description
-        self.__books_in_genre = []
     
     def get_genre_name(self):
         return self.__genre_name
@@ -25,9 +26,6 @@ class Genre:
     
     def get_description(self):
         return self.__description
-    
-    def get_books_in_genre(self):
-        return self.__books_in_genre
     
     def set_genre_name(self, new_genre):
         try:
@@ -46,8 +44,24 @@ class Genre:
     def set_description(self, edit_description):
         self.__description = edit_description
     
-    def add_books_in_genre(self, new_book):
-        self.get_books_in_genre().append(new_book)
+    def add_genre_to_table(self):
+        conn = connect_database()
+        if conn is not None:
+            try:
+                cursor = conn.cursor()
+                query = "INSERT INTO Genres (name, fict_or_nonfit, description) VALUES (%s, %s, %s)"
+                values_tuple = (self.get_genre_name(), self.get_fict_or_nonfict, self.get_description())
+                cursor.execute(query, values_tuple)
+                conn.commit()
+                print(f"{self.get_genre_name()} has been added to Genres table")
+            except Exception as e:
+                print(f"Error: {e}")
+            finally:
+                cursor.close()
+                conn.close()
+
+
+
 
     def display_genre_details(self):
         print(f"Genre Name: {self.get_genre_name()}\nGenre Type: {self.get_fict_or_nonfict()}\nDescripton: {self.get_description()}")

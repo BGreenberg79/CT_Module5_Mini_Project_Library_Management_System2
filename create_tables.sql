@@ -36,4 +36,6 @@ FOREIGN KEY (book_id) REFERENCES books(id),
 borrow_date DATE NOT NULL,
 return_date DATE);
 
+ALTER TABLE Authors 
+ADD date_of_birth DATE NOT NULL;
 --
