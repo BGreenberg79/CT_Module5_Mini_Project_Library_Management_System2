@@ -12,8 +12,7 @@ class SetterException(Exception):
     pass
 
 class Book(Genre):
-    def __init__(self, genre_name, fict_or_nonfict, description, title, author, isbn, publication_date):
-        super().__init__(genre_name, fict_or_nonfict, description)
+    def __init__(self, title, author, isbn, publication_date):
         self.__title = title
         self.__author = author
         self.__isbn = isbn
@@ -123,7 +122,7 @@ class Book(Genre):
         if conn is not None:
             try:
                 cursor = conn.cursor()
-                query = "SELECT b.id as BooksID, b.title, a.name as AuthorName, g.name as Genre, g.fict_or_nonfict, b.isbn, b.publication_date, b.availability FROM Books b, Authors a, Genres g WHERE b.author_id=a.id AND b.genre_id=g.id"
+                query = "SELECT b.id as BooksID, b.title, a.name as AuthorName, g.name as Genre, b.isbn, b.publication_date, b.availability FROM Books b, Authors a, Genres g WHERE b.author_id=a.id AND b.genre_id=g.id"
                 cursor.execute(query)
                 print("Book Details:")
                 for row in cursor.fetchall():

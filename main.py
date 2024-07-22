@@ -3,7 +3,7 @@ from Book import Book
 from User import User
 from Author import Author
 from Genre import Genre
-from fetch_and_check import fetch_genre_names, fetch_isbn_numbers, fetch_author_id, fetch_genre_id, fetch_author_list, fetch_book_id_from_isbn, get_book_object_from_table, fetch_card_numbers, fetch_user_id_from_card_number
+from fetch_and_check import fetch_genre_names, fetch_isbn_numbers, fetch_author_id, fetch_genre_id, fetch_author_list, fetch_book_id_from_isbn, get_book_object_from_table, fetch_card_numbers, fetch_user_id_from_card_number, fetch_rental_id
 
 ''' Here we import each module for each of the 4 classes our main program will feature: Book, User, Author, and Genre. We also import the regular expression module.'''
 
@@ -76,7 +76,7 @@ def book_operations_menu():
                     else:
                         print("Pleae enter author's date of birth in valid format (YYYY-MM-DD)")
                     if re.match(book_title_regex, book_title) and re.match(name_regex, author_name) and re.match(isbn_regex, isbn) and re.match(date_regex, publication_date):
-                        new_book = Book(genre_name, genre_type, genre_descript, book_title, author_name, isbn, publication_date)
+                        new_book = Book(book_title, author_name, isbn, publication_date)
                         book_isbn_list = [book.get_isbn() for book in book_object_set]
                         if new_book.get_isbn() not in book_isbn_list:
                             book_object_set.add(new_book)
@@ -115,28 +115,27 @@ def book_operations_menu():
                         print("Please ensure ISBN entered in proper format")
                 except Exception as e:
                     print(f"Error: {e}")
-                    #Code should be sound to this point
-                    #Start from Book menu input 3
             elif book_menu_input == "3":
                 try:
                     return_isbn = input("Enter ISBN for book you wish to return to library: ")
                     if re.match(isbn_regex, return_isbn):
-                        if return_isbn in library_dictionary.keys():
-                            if library_dictionary[return_isbn].get_availability_status() == False:
-                                return_id = input("Please enter your Library ID number here: ")
-                                library_dictionary[return_isbn].return_book()
-                                if return_id in user_dictionary.keys():
-                                    user_dictionary[return_id].add_to_returned_list(library_dictionary[return_isbn])
-                                else:
-                                    print("Please ensure user has been registered to our system already.")
+                        if return_isbn in fetch_isbn_numbers():
+                            return_book_id = fetch_book_id_from_isbn(return_isbn)
+                            return_book = get_book_object_from_table(return_book_id)
+                            return_card_num = input("Enter your Library card number here: ")
+                            return_date = input("Please enter the date you returned this book: ")
+                            if return_card_num not in fetch_card_numbers():
+                                print("Please ensure user has been registered to system before returning books.")
                             else:
-                                print("Book is not currently borrowed")
+                                return_user_id = fetch_user_id_from_card_number(return_card_num)
+                                borrowed_books_id = fetch_rental_id(return_book_id, return_user_id)
+                                return_book.return_book(return_book_id, return_user_id, borrowed_books_id, return_date)
                         else:
                             print("Please ensure book with this ISBN number has been added to library before attempting to return it")
-                except KeyError:
-                    print("Please ensure book with this ISBN number had been added to the library.")
                 except Exception as e:
                     print(f"Error: {e}")
+                    #Code should be sound to this point
+                    #Start from Book menu input 3
             elif book_menu_input == "4":
                 try:
                     search_criteria = input("Please enter criteria you wish to search by (title or ISBN): ").lower()

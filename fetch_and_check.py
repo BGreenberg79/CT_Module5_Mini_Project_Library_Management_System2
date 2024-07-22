@@ -105,12 +105,12 @@ def get_book_object_from_table(book_id):
     if conn is not None:
         try:
             cursor = conn.cursor()
-            query = "SELECT g.name AS GenreName, g.fict_or_nonfict AS GenreType, g.description, b.title, a.name AS AuthorName, b.isbn, b.publication_date FROM Genres g, Books b, Authors a WHERE a.id = b.author_id AND g.id = b.genre_id AND b.id = %s"
+            query = "SELECT b.title, a.name AS AuthorName, b.isbn, b.publication_date FROM Genres g, Books b, Authors a WHERE a.id = b.author_id AND g.id = b.genre_id AND b.id = %s"
             book_id_tup = (book_id,)
             cursor.execute(query, book_id_tup)
             for row in cursor.fetchall():
-                genre_name, genre_type, genre_descript, book_title, author_name, book_isbn, book_pub_date = row
-            book_from_table = Book(genre_name, genre_type, genre_descript, book_title, author_name, book_isbn, book_pub_date)
+                book_title, author_name, book_isbn, book_pub_date = row
+            book_from_table = Book(book_title, author_name, book_isbn, book_pub_date)
         except Exception as e:
             print(f"Error: {e}")
         finally:
@@ -128,7 +128,7 @@ def fetch_book_id_from_isbn(isbn):
             query = "SELECT DISTINCT id from Books WHERE isbn = %s"
             input_tuple = (isbn,)
             cursor.execute(query, input_tuple)
-            for id in cursor.fetch_all():
+            for id in cursor.fetchall():
                 id_tuple += id
             for item in id_tuple:
                 id_string += item
@@ -168,6 +168,28 @@ def fetch_user_id_from_card_number(card_number):
             cursor = conn.cursor()
             query = "SELECT DISTINCT id FROM Users WHERE card_number = %s"
             input_tuple = (card_number,)
+            cursor.execute(query, input_tuple)
+            for id in cursor.fetchall():
+                id_tuple += id
+            for item in id_tuple:
+                id_string += item
+            id_string.strip()
+        except Exception as e:
+            print(f"Error: {e}")
+        finally:
+            cursor.close()
+            conn.close()
+            return id_string
+        
+def fetch_rental_id(book_id, user_id):
+    conn = connect_database()
+    if conn is not None:
+        try:
+            id_tuple = ()
+            id_string = ""
+            cursor = conn.cursor()
+            query = "SELECT DISTINCT id FROM BorrowedBooks WHERE book_id = %s AND user_id = %s"
+            input_tuple = (book_id, user_id)
             cursor.execute(query, input_tuple)
             for id in cursor.fetchall():
                 id_tuple += id
