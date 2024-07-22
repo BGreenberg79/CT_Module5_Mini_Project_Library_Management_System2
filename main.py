@@ -135,7 +135,7 @@ def book_operations_menu():
                 except Exception as e:
                     print(f"Error: {e}")
                     #Code should be sound to this point
-                    #Start from Book menu input 3
+                    #Start from Book menu input 4
             elif book_menu_input == "4":
                 try:
                     search_criteria = input("Please enter criteria you wish to search by (title or ISBN): ").lower()
