@@ -3,7 +3,7 @@ from Book import Book
 from User import User
 from Author import Author
 from Genre import Genre
-from fetch_and_check import fetch_genre_names, fetch_isbn_numbers, fetch_author_id, fetch_genre_id, fetch_author_list, fetch_book_id_from_isbn, get_book_object_from_table, fetch_card_numbers, fetch_user_id_from_card_number, fetch_rental_id
+from fetch_and_check import fetch_genre_names, fetch_isbn_numbers, fetch_author_id, fetch_genre_id, fetch_author_list, fetch_book_id_from_isbn, get_book_object_from_table, fetch_card_numbers, fetch_user_id_from_card_number, fetch_rental_id, fetch_book_id_from_title, fetch_book_id_tup, fetch_user_id_from_name, get_user_object_from_table, fetch_user_names, fetch_user_id_tup
 
 ''' Here we import each module for each of the 4 classes our main program will feature: Book, User, Author, and Genre. We also import the regular expression module.'''
 
@@ -134,32 +134,34 @@ def book_operations_menu():
                             print("Please ensure book with this ISBN number has been added to library before attempting to return it")
                 except Exception as e:
                     print(f"Error: {e}")
-                    #Code should be sound to this point
-                    #Start from Book menu input 4
             elif book_menu_input == "4":
                 try:
                     search_criteria = input("Please enter criteria you wish to search by (title or ISBN): ").lower()
                     if search_criteria == "title":
                         search_title = input("Enter title of book you are searching for: ")
                         if re.match(book_title_regex, search_title):
-                            for book in library_dictionary.values():
-                                if book.get_title() == search_title:
-                                    print("\n")
-                                    book.display_details()
+                            lookup_title_bookid = fetch_book_id_from_title(search_title)
+                            title_book_display = get_book_object_from_table(lookup_title_bookid)
+                            title_book_display.display_details()
+                        else:
+                            print("Please ensure valid title was entered into input")
                     elif search_criteria == "isbn":
                             search_isbn = input("Enter ISBN number (remove hyphens): ")
                             if re.match(isbn_regex, search_isbn):
-                                for isbn_key in library_dictionary.keys():
-                                    if search_isbn == isbn_key:
-                                        print("\n")
-                                        library_dictionary[isbn_key].display_details()                         
-                except KeyError:
-                    print("Please ensure book with this ISBN number has been added.")
+                                lookup_isbn_bookid = fetch_book_id_from_isbn(search_isbn)
+                                isbn_book_display = get_book_object_from_table(lookup_isbn_bookid)
+                                isbn_book_display.display_details()
+                            else:
+                                print("Please ensure valid ISBN was entered into input")
                 except Exception as e:
                     print(f"Error: {e}")
             elif book_menu_input == "5":
-                for index, book in enumerate(library_dictionary.values(), 1):
-                    print(f"\n{index}."), book.display_details()
+                list_of_book_objects = []
+                for book_id in fetch_book_id_tup():
+                    book_object = get_book_object_from_table(book_id)
+                    list_of_book_objects.append(book_object)
+                for index, book in enumerate(list_of_book_objects, 1):
+                    print(f"{str(index)}:"), book.display_details()
             elif book_menu_input == "6":
                 break
             else:
@@ -167,40 +169,20 @@ def book_operations_menu():
     
 
 '''
-The book_operations function is the most complicated function in the program and it needs to reference global variables for all of its regular expression handling as well as for its use of the library dictionary,
-user dictionary, author list, and genre list. It's starts by asking users if they wish to add, rent, return, search for a book, or print all books.
-If the user decides to add a book they will be prompted for the book's title, the author's name, the isbn number, the publication date, and the genre name all checke dby regular expressions.
-Once the genre name is input the logic beins by checking if this genre's name is already in the global genre list through a list comphrehension using the genre name getter method. 
-if this genre name is already in the genre name list w ebuilt through the comprehension, we then loop through the genre list, match the users input to its existing genre and use getters to assign genre type and description to inherit our previous entry.
-At that point we check if this book title has already been added to the list of books in this genre at the index location of the genre list for the genre object that matched our users' input.
-Once we have ensured that this title has not been added we use our Genre classes' .add_books_in_genre() method to append it to that genre objects list of book titles. This is the one instance in the entire program I decided to use our users' string input
-instead of appending an object to a list inside another class because Genre is a parent class for Book and I experienced some trouble trying to append a child class object to a list that is part of its parents class attributes. When using the similar, if not more simplistic logic for
-my Author class that was not part of a parent-child relationship with Book I experienced no issues.
-If the genre the user is inputting for this Book object has not been previous added the user is prompted for inputs for a type (fiction vs. non-fiction) that is alo authenticated by regex and and is prompted for a brief description. The genre's name, type, and description is then used to create an object for the Genre class
-and this object instance is appended to our global genre list and the book title is appended to this instance's list of books for that genre.
-Once all of the logic for the Genre class is handled we check if this isbn number is in our global library dictionary's list of keys and if it is not we assign a Book object instance with user inputs for genre name, genre type, genre description, title, author name, isbn, and publishing date as the value for the key of that isbn number.
-I then do a list comprehension using the .get_author_name() method to get a list of author names from the author list. If the author's name is not in that list comprehension we get inputs for author's home country and Date of birth (verified by regex) and instantiate a new Author object for
-the new author we are adding to our author list. We then append that author to the global author list and add the book at this ISBN key location to the list of books written by that author using the .add_authored_book() method
-If the author's name is aleady in the author_name_list list comprehension we loop through the list of objects in author_list and the object with a matching getter for name to the user input has the book object located at that ISBN key location added to that Author's book list by using the add_authored_book() method on that author object.
-In choice 2 we first ask the user of the ISBN number they wish to rent out, verifying that number via regex, and after checking that the ISBN number is in our dictionary's list of keys and 
-checking that at this key location the .get_availability_status() method produces a True result, we run .borrow_book() method on the book object at that ISBN location.
-We then prompt the user for their Library ID and if it is in the user_distcionary.keys() list we use the .add_to_currently_borrowed_books() method to update their user record.
-If that Library ID does not show up in the list of keys we take another input for the user's name and set up their new account by instantiating a User object with that Library ID number and the name they just entered into the input.
-We then run the .add_to_currently_borrowed_books() method for the new user's object with the book object at that ISBN key location.
-In choice 3 we similarly start by asking for the ISBN number of the book they wish to return and checking if that ISBN number is in the library_dictionary.keys() list as well as not currently available to borrow.
-If so,  we ask the user for their library ID number and if that number is in the user_dicionary we  run the .return_book() method and the .add_to_returned_list method to appropriately update the book's availability status, as well as the users current borrowed book list and list of returned books.
-Choice 4 takes a search criteria to check if the user wishes to display the details for a book searching by title or by ISBN. If they choose title we use the library_dictionary.values() list and the get_title() method to match the title of the book object to the user's input and 
-and then run the .display_details() method on the book object that has that exact match. Similarly for searching by isbn we match the isbn they search for to the library_dictionary.keys() list and at that key location we run the .display_details() method to display the details of the book object at that key location
-I also built a KeyError exception in at this point in case the user searches for a book that hasn't been added to the library_dictionary. At choice 5 I use the enumerate function to number each object in the library_dictionary.values() list
-and then run the .display_details() method on each of those objects. At choice 6 we have the option to return to the main menu by breaking this menu's while loop.
-
+The book_operations function is the most complicated function in the program and it needs to reference global variables for all of its regular expression handling. 
+The function works by giving users the option to add a book, which uses Book class methods, as well as Author and Genre classes to successfully add new and unique books, authors, and 
+genres to their appropriate SQL tables referencing both class methods and my extensive lst of fetch_and_check functions. The fetch_and_check functions allow us to verify that a user is not inputing a duplicate,
+as well as succesfully look up book_id's, genre_id's, and author_id's that are auto incremented. It also allows us to unpack a SELECT query tuple into Book objects so we can then call Book methods in our code.
+Options two and three take in the appropriate inputs and use the aforementioned fetch and check functions to add entries to the BorrowedBooks table, update a the Book table and object's availability, and lastly UPDATE BorrowedBooks upon the return date.
+Option 4 asks the user if they wish to look up a book's details by ISBN or title and then uses that information to fetch the appropriate book_id, unpack a tuple into a book object and then run the .display_details() method on that object.
+Lastly Option 5 runs the .display_details() method on every book in our database by fetching every book_id, and then using each book_id to get book objects and add those book objects into a temporary list that we can then run the enumerate function
+on to create a numbered list where every book's details are displayed. Option 6 returns users to the main menu.
 '''
 
 def user_operations_menu():
     global input_regex
     global name_regex
-    global user_dictionary
-    global library_dictionary
+    global user_object_set
     while True:
         try:
             user_title_message = "\nUser Operations"
@@ -209,34 +191,50 @@ def user_operations_menu():
             if re.match(input_regex, user_menu_input):
                 if user_menu_input == "1":
                     new_user_name = input("Please enter your name: ")
-                    new_user_id = input("Please enter your new Library ID: ")
-                    if re.match(name_regex,new_user_name):
-                        user_dictionary[new_user_id] = User(new_user_name, new_user_id)
+                    new_card_num = input("Please enter your new Library card number: ")
+                    if new_card_num in fetch_card_numbers():
+                        print("It appears a user with this library card has already been added to our database. Please try a new number.")
+                    else:
+                        if re.match(name_regex,new_user_name):
+                            new_user_object = User(new_user_name, new_card_num)
+                            new_user_object.add_user_to_table()
+                            user_object_set_card_num_list = [user.get_card_number() for user in user_object_set]
+                            if new_card_num not in user_object_set_card_num_list:
+                                user_object_set.add(new_user_object)
+                            else:
+                                print("User object was already in temporary User set.")
+                        else:
+                            print("Please ensure a valid name was entered for the user.")
                 elif user_menu_input == "2":
-                    user_search_criteria = input("Please enter if you wish to search by 'Name' or 'Library ID': ").lower()
+                    user_search_criteria = input("Please enter if you wish to search by 'Name' or 'Card Number': ").lower()
                     if user_search_criteria == 'name':
                         search_user_name = input("Please enter your name here: ")
-                        if re.match(name_regex, search_user_name):
-                            for user in user_dictionary.values():
-                                if user.get_name() == search_user_name:
-                                    print("\n")
-                                    user.display_user_details()
+                        if search_user_name in fetch_user_names():
+                            if re.match(name_regex, search_user_name):
+                                search_user_id_by_name = fetch_user_id_from_name(search_user_name)
+                                display_name_user_object = get_user_object_from_table(search_user_id_by_name)
+                                display_name_user_object.display_user_details()
+                            else:
+                                print("Please enter your name in valid first and last name format.")
                         else:
-                            print("Please enter your name in valid first and last name format.")
-                    elif user_search_criteria == 'library id' or user_search_criteria == 'id':
-                        try:
-                            search_library_id = input("Please enter your Library ID here: ")
-                            for library_id_key in user_dictionary.keys():
-                                if search_library_id == library_id_key:
-                                    print("\n")
-                                    user_dictionary[library_id_key].display_user_details()
-                        except KeyError:
-                            print("Please ensure user with this Library ID has been added prior to search")
+                            print("Please ensure user has first been added too database")
+                    elif user_search_criteria == 'card number':
+                            search_card_num = input("Please enter your card bumber here: ")
+                            if search_card_num in fetch_card_numbers():
+                                search_user_id_by_card_num = fetch_user_id_from_card_number(search_card_num)
+                                display_card_num_user_object = get_user_object_from_table(search_user_id_by_card_num)
+                                display_card_num_user_object.display_user_details()
+                            else:
+                                print("Please ensure a user with this card number has been entered into the database.")
                     else:
                         print("Invalid input please respond with 'Name' or 'Library ID'")
                 elif user_menu_input == "3":
-                    for index, user in enumerate(user_dictionary.values(), 1):
-                        print(f"\n{index}:"), user.display_user_details()
+                    list_of_user_objects = []
+                    for user_id in fetch_user_id_tup():
+                        user_object = get_user_object_from_table(user_id)
+                        list_of_user_objects.append(user_object)
+                    for index, user in enumerate(list_of_user_objects, 1):
+                        print(f"{str(index)}:"), user.display_user_details()
                 elif user_menu_input == "4":
                     break
                 else:
@@ -245,15 +243,17 @@ def user_operations_menu():
             print(f"Error: {e}")
             
 '''
-The user operations menu uses global dictionaries for the library_dictionary and user_dictionary as well as for the input_regex and name_regex variables.
-The function allows users to add new users, view details for users accounts searching by name or by library id, and prints a list of all users. It adds new users by taking inputs for the user's name and 
-library ID, and after validating the name input through a regular expression, assigns a value with a User class object (instantiated using the two inputs) at the key of library id in the user_dictionary dictionary.
-Option 2 allows the user to search for a user's details by taking a search criteria of name or library id. If the user decides to search by name we we prompt another input for the user to enter the name they are searching for and after validating the input via regex,
-we loop through the user_dictionary list of values and match the user input to the proper object using the .get_name() method. Once the proper User object is identified we call the .display_details method on it.
-If the user selects to search via Library ID  we use a similar logic but this time produce a match comparing the user input to the user_dictionary.keys() list. If the match is found we run the display_details() method on the User object at the match's key location.
-IF the user chooses option 3 we use the enumerate function to make a list of each object in the dictionary values and run the display_user_details() method on each of them. Option 4 breaks the loop and returns the user to the main menu
+The user operations menu uses the global user object set as well as the input_regex and name_regex variables. If the user chooses to add a new user they are prompted for inputs for  name and library card number.
+We then verify that we are not entering a duplicate by using our fetch and check variables, and if its is a new card number we run regex verification on the name input.
+We then instantiate a new User object to have access to the methods from the two inputs, then calling the .add_user_to_table() method on our new object. I then verify with a list comprehension
+that our User object does not already have a duplicate in our user_object_set using the .get_card_number() method. If there is not duplicate we use the .add() method to add it to our local object set.
+In option two we can search for a user by name or card number and then dispaly their details. Much like the book menu we use fetchers and regex to verify that our user's input is valid and once we do that 
+we retrieve the auto-incremented ID by using our user's search criteria input. We then use that ID to call our get_user_object_from_table() function that unpacks a fetchall tuple into a User object.
+We then call the .display_user_details method on our new object.
+Option 3 instantiates a temporary list of user objects that we will populate by looping through all of our auto-incremented user ID's, using the get_user_object_from_table() fucntion on them and then appending those user_objects to the list.
+Then we run another for loop, this time as an enumerate function where we run through the list we just populated starting at 1 and calling the .display_user_details() method on each object.
 '''
-
+#Start from here
 def author_operations_menu():
     global input_regex
     global name_regex

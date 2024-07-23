@@ -1,5 +1,6 @@
 from connect_mysql import connect_database
 from Book import Book
+from User import User
 
 def fetch_genre_names():
     conn = connect_database()
@@ -118,6 +119,25 @@ def get_book_object_from_table(book_id):
             conn.close()
             return book_from_table
 
+def fetch_book_id_tup():
+    conn = connect_database()
+    if conn is not None:
+        try:
+            book_id_tup = ()
+            cursor = conn.cursor()
+            query = "SELECT id FROM Books"
+            cursor.execute(query)
+            for row in cursor.fetchall():
+                book_id_tup += row
+            ""
+        except Exception as e:
+            print(f"Error: {e}")
+        finally:
+            cursor.close()
+            conn.close()
+            return book_id_tup
+
+
 def fetch_book_id_from_isbn(isbn):
     conn = connect_database()
     if conn is not None:
@@ -125,8 +145,30 @@ def fetch_book_id_from_isbn(isbn):
             id_tuple = ()
             id_string = ""
             cursor = conn.cursor()
-            query = "SELECT DISTINCT id from Books WHERE isbn = %s"
+            query = "SELECT DISTINCT id FROM Books WHERE isbn = %s"
             input_tuple = (isbn,)
+            cursor.execute(query, input_tuple)
+            for id in cursor.fetchall():
+                id_tuple += id
+            for item in id_tuple:
+                id_string += item
+            id_string.strip()
+        except Exception as e:
+            print(f"Error: {e}")
+        finally:
+            cursor.close()
+            conn.close()
+            return id_string
+    
+def fetch_book_id_from_title(title):
+    conn = connect_database()
+    if conn is not None:
+        try:
+            id_tuple = ()
+            id_string = ""
+            cursor = conn.cursor()
+            query = "SELECT DISTINCT id FROM Books WHERE title = %s"
+            input_tuple = (title,)
             cursor.execute(query, input_tuple)
             for id in cursor.fetchall():
                 id_tuple += id
@@ -158,6 +200,41 @@ def fetch_card_numbers():
             conn.close()
             return card_num_tuple
 
+def fetch_user_names():
+    conn = connect_database()
+    if conn is not None:
+        try:
+            user_name_tuple = ()
+            cursor = conn.cursor()
+            query = "SELECT name FROM Users"
+            cursor.execute(query)
+            for name in cursor.fetchall():
+                user_name_tuple += name
+            ""
+        except Exception as e:
+            print(f"Error: {e}")
+        finally:
+            cursor.close()
+            conn.close()
+            return user_name_tuple
+
+def fetch_user_id_tup():
+    conn = connect_database()
+    if conn is not None:
+        try:
+            user_id_tup = ()
+            cursor = conn.cursor()
+            query = "SELECT id FROM Users"
+            cursor.execute(query)
+            for row in cursor.fetchall():
+                user_id_tup += row
+            ""
+        except Exception as e:
+            print(f"Error: {e}")
+        finally:
+            cursor.close()
+            conn.close()
+            return user_id_tup
 
 def fetch_user_id_from_card_number(card_number):
     conn = connect_database()
@@ -180,7 +257,29 @@ def fetch_user_id_from_card_number(card_number):
             cursor.close()
             conn.close()
             return id_string
-        
+
+def fetch_user_id_from_name(name):
+    conn = connect_database()
+    if conn is not None:
+        try:
+            id_tuple = ()
+            id_string = ""
+            cursor = conn.cursor()
+            query = "SELECT DISTINCT id FROM Users WHERE name = %s"
+            input_tuple = (name,)
+            cursor.execute(query, input_tuple)
+            for id in cursor.fetchall():
+                id_tuple += id
+            for item in id_tuple:
+                id_string += item
+            id_string.strip()
+        except Exception as e:
+            print(f"Error: {e}")
+        finally:
+            cursor.close()
+            conn.close()
+            return id_string
+
 def fetch_rental_id(book_id, user_id):
     conn = connect_database()
     if conn is not None:
@@ -202,3 +301,21 @@ def fetch_rental_id(book_id, user_id):
             cursor.close()
             conn.close()
             return id_string
+        
+def get_user_object_from_table(user_id):
+    conn = connect_database()
+    if conn is not None:
+        try:
+            cursor = conn.cursor()
+            query = "SELECT name, card_number FROM Users WHERE id = %s"
+            user_id_tup = (user_id,)
+            cursor.execute(query, user_id_tup)
+            for row in cursor.fetchall():
+                user_name, user_card_num = row
+            user_from_table = User(user_name, user_card_num)
+        except Exception as e:
+            print(f"Error: {e}")
+        finally:
+            cursor.close()
+            conn.close()
+            return user_from_table

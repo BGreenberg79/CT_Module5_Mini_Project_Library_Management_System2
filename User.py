@@ -46,18 +46,18 @@ class User():
                 cursor.close()
                 conn.close()
 
-    # def display_user_details(self):
-    #     print(f"User Name: {self.get_name()}\nLibrary ID: {self.get_library_id()}")
-    #     print("Returned Books:")
-    #     if not self.get_borrowed_and_returned_books():
-    #         print("No books have been returned yet by this user")
-    #     else:
-    #         for returned_book in self.get_borrowed_and_returned_books():
-    #             print(f"{returned_book.get_title()}")
-    #     print("Currently Borrowing:")
-    #     if not self.get_currently_borrowed_books():
-    #         print("No books currently borrowed by this user")
-    #     else:
-    #         for current_book in self.get_currently_borrowed_books():
-    #             print(f"{current_book.get_title()}")
-    
+    def display_user_details(self):
+        conn = connect_database()
+        if conn is not None:
+            try:
+                cursor = conn.cursor()
+                query = "SELECT u.id AS UserID, u.name AS Name, u.card_number AS CardNumber, b.title AS BorrowedBookTitle, bb.borrow_date AS Borrow Date, bb.return_date AS ReturnDate FROM Users u, Books b, BorrowedBooks bb WHERE bb.user_id=u.id AND bb.book_id=b.id"
+                cursor.execute(query)
+                print("User Details:")
+                for row in cursor.fetchall():
+                    print(row)
+            except Exception as e:
+                print(f"Error: {e}")
+            finally:
+                cursor.close()
+                conn.close()
