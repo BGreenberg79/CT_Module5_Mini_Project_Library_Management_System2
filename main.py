@@ -258,8 +258,7 @@ def author_operations_menu():
     global input_regex
     global name_regex
     global date_regex
-    global author_list
-    global library_dictionary
+    global author_object_set
     while True:
         try:
             author_title_message = "\nAuthor Operations"
@@ -268,8 +267,9 @@ def author_operations_menu():
             if re.match(input_regex, author_menu_input):
                 if author_menu_input == "1":
                     new_author_name = input("Please enter the name of the author you wish to add to the system: ").title()
-                    new_country_of_birth = input("Please enter the country of birth for this author: ")
-                    new_author_dob = input("Please enter the date of brth for this author in MM-DD-YYYY format: ")
+                    new_country_of_birth = input("Please enter the country of birth for this author: ").title()
+                    new_author_dob = input("Please enter the date of brth for this author in YYYY-MM-DD format: ")
+                    ''''''
                     if re.match(name_regex, new_author_name) and re.match(date_regex, new_author_dob):
                         adding_author = Author(new_author_name, new_country_of_birth, new_author_dob)
                         if adding_author not in author_list:
