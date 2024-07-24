@@ -3,7 +3,7 @@ from Book import Book
 from User import User
 from Author import Author
 from Genre import Genre
-from fetch_and_check import fetch_genre_names, fetch_isbn_numbers, fetch_author_id, fetch_genre_id, fetch_author_list, fetch_book_id_from_isbn, get_book_object_from_table, fetch_card_numbers, fetch_user_id_from_card_number, fetch_rental_id, fetch_book_id_from_title, fetch_book_id_tup, fetch_user_id_from_name, get_user_object_from_table, fetch_user_names, fetch_user_id_tup
+from fetch_and_check import fetch_genre_names, fetch_isbn_numbers, fetch_author_id, fetch_genre_id, fetch_author_list, fetch_book_id_from_isbn, get_book_object_from_table, fetch_card_numbers, fetch_user_id_from_card_number, fetch_rental_id, fetch_book_id_from_title, fetch_book_id_tup, fetch_user_id_from_name, get_user_object_from_table, fetch_user_names, fetch_user_id_tup, fetch_author_id_name_only, get_author_object_from_table, fetch_author_names, fetch_author_id_tup, get_genre_object_from_table, fetch_genre_id_tup
 
 ''' Here we import each module for each of the 4 classes our main program will feature: Book, User, Author, and Genre. We also import the regular expression module.'''
 
@@ -66,10 +66,10 @@ def book_operations_menu():
                     author_new_dob = input("Now please enter their date of birth in YYYY-MM-DD format: ")
                     if re.match(date_regex, author_new_dob):
                         new_author = Author(author_name, author_home_country, author_new_dob)
-                        author_name_country_list = [(author.get_author_name(), author.get_home_country()) for author in author_object_set]
-                        if (new_author.get_author_name(), new_author.get_home_country()) not in author_name_country_list:
+                        author_name_country_list = [(author.get_author_name(), author.get_home_country(), author.get_date_of_birth()) for author in author_object_set]
+                        if (new_author.get_author_name(), new_author.get_home_country(), new_author.get_date_of_birth()) not in author_name_country_list:
                             author_object_set.add(new_author)
-                        if (new_author.get_author_name(), new_author.get_home_country()) not in fetch_author_list():
+                        if (new_author.get_author_name(), new_author.get_home_country(), new_author.get_date_of_birth()) not in fetch_author_list():
                             new_author.add_author_to_table()
                         else:
                             print(f"{new_author.get_author_name()} from {new_author.get_home_country()} is already in our database")
@@ -253,7 +253,6 @@ We then call the .display_user_details method on our new object.
 Option 3 instantiates a temporary list of user objects that we will populate by looping through all of our auto-incremented user ID's, using the get_user_object_from_table() fucntion on them and then appending those user_objects to the list.
 Then we run another for loop, this time as an enumerate function where we run through the list we just populated starting at 1 and calling the .display_user_details() method on each object.
 '''
-#Start from here
 def author_operations_menu():
     global input_regex
     global name_regex
@@ -269,27 +268,35 @@ def author_operations_menu():
                     new_author_name = input("Please enter the name of the author you wish to add to the system: ").title()
                     new_country_of_birth = input("Please enter the country of birth for this author: ").title()
                     new_author_dob = input("Please enter the date of brth for this author in YYYY-MM-DD format: ")
-                    ''''''
-                    if re.match(name_regex, new_author_name) and re.match(date_regex, new_author_dob):
-                        adding_author = Author(new_author_name, new_country_of_birth, new_author_dob)
-                        if adding_author not in author_list:
-                            author_list.append(adding_author)
-                            print(f"{new_author_name} has been added to the author list.")
-                        elif adding_author in author_list:
-                            print(f"{new_author_name} is already in the author list and a duplicate entry has not been added.")
+                    if (new_author_name, new_country_of_birth, new_author_dob) in fetch_author_list():
+                        print("It appears this author has already been added to our database.")
+                    else:
+                        if re.match(name_regex, new_author_name) and re.match(date_regex, new_author_dob):
+                            adding_author = Author(new_author_name, new_country_of_birth, new_author_dob)
+                            adding_author.add_author_to_table()
+                            author_set_object_list = [(author.get_author_name(), author.get_home_country(), author.get_date_of_birth()) for author in author_object_set]
+                            if (adding_author.get_author_name(), adding_author.get_home_country(), adding_author.get_date_of_birth()) not in author_set_object_list:
+                                author_object_set.add(adding_author)
+                        else:
+                            print("Please ensure valid name and date inputs were used.")
                 elif author_menu_input == "2":
                     search_author_name = input("Please enter the name of the author you wish to view a biography of: ")
                     if re.match(name_regex, search_author_name):
-                        try:
-                            for author in author_list:
-                                if author.get_author_name() == search_author_name:
-                                    print("\n")
-                                    author.display_biography()
-                        except IndexError:
-                            print("Please ensure author with this name has already been added to the author list before attempting to view details.")
+                        if search_author_name in fetch_author_names():
+                            search_author_id = fetch_author_id_name_only(search_author_name)
+                            search_author_object = get_author_object_from_table(search_author_id)
+                            search_author_object.display_biography()
+                        else:
+                            print("Please ensure the author you are searching for has been added to the database already.")
+                    else:
+                        print("Please ensure a valid name input was entered")
                 elif author_menu_input == "3":
-                    for index, author in enumerate(author_list, 1):
-                        print(f"\n{index}:"), author.display_biography()
+                    list_of_author_objects = []
+                    for author_id in fetch_author_id_tup():
+                        author_object = get_author_object_from_table(author_id)
+                        list_of_author_objects.append(author_object)
+                    for index, author in enumerate(list_of_author_objects, 1):
+                        print(f"{str(index)}:"), author.display_biography()
                 elif author_menu_input == "4":
                     break
                 else:
@@ -298,20 +305,23 @@ def author_operations_menu():
             print(f"Error: {e}")
         
 '''
-The author_operations_menu is a while loop with options 1-4 that allows the user to add author objects to the author list, display details for individual authors, or display details for each author. If the user chooses option 
-1 they can add an author and are prompted to input the new authors name. At this point we convert their input to titlecase and run a regex to validate their input. We then prompt the user for a country of birth and date of birth and once this information is stored and the date is validated to be in proper format
-We create the adding_author variable to store an Author class object witht he user inputs. If that object is not already in the global author list, we append it to the list. I also included logic to print a statement saying if the uathor is already in the list.
-Option 2 prompts the user for a name to searh for a specific author's biographical information. Once this input is validated via regex we try to loop through the author list and use the .get_author_name method on each object looking for a match with the user input.
-If there is a match we run the .display_biography method on that Author object, and I have an exception built in for an IndexError in case the user searches for an author not in the list, much like my earlier KeyError exceptions that handled searches for missing dictionary entries.
-Option 3 uses the enumerate function to loop through the entire list and numbers each biographical entry in our list. Option 4 returns the user to the main menu.
+The author operations menu uses the global author object set as well as the input_regex, date regex, and name_regex variables. If the user chooses to add a new author they are prompted for inputs for name, home country and date of birth.
+We then verify that we are not entering a duplicate by using our fetch and check functions, and if its is a new author we run regex verification on the name and date input.
+We then instantiate a new Author object to have access to the methods from the three inputs, then calling the .add_author_to_table() method on our new object. I then verify with a list comprehension
+that our Author object does not already have a duplicate in our author_object_set using a tuple and getter methods on each of its attributes. If there is no duplicate we use the .add() method to add it to our local object set.
+In option two we can search for an author by name and then dispaly their biography. Much like the book and user menus we use fetchers and regex to verify that our user's input is valid and once we do that 
+we retrieve the auto-incremented author ID that matches the user's name input. We then use that ID to call our get_author_object_from_table() function that unpacks a fetchall tuple into an Author object.
+We then call the .display_biography method on our new object.
+Option 3 instantiates a temporary list of author objects that we will populate by looping through all of our auto-incremented author ID's, using the get_author_object_from_table() fucntion on them and then appending those author_objects to the list.
+Then we run another for loop, this time as an enumerate function where we run through the list we just populated starting at 1 and calling the .display_biography() method on each object.
+
 '''
 
 def genre_operations_menu():
     global input_regex
-    global genre_list
+    global genre_object_set
     global genre_regex
     global fiction_regex
-    global library_dictionary
     while True:
         try:
             genre_title_message = "\nGenre Operations"
@@ -320,42 +330,50 @@ def genre_operations_menu():
             if re.match(input_regex, genre_menu_input):
                 if genre_menu_input == "1":
                     new_genre_name = input("Please enter the name of the genre you wish to add: ").title()
-                    genre_name_list = [genre.get_genre_name() for genre in genre_list]
-                    if new_genre_name not in genre_name_list:
-                        genre_fict_nonfict = input("Is this genre best classified as Fiction or Non-Fiction: ").title()
-                        describe_genre = input("Please enter a brief description of this genre: ")
-                        if re.match(genre_regex, new_genre_name) and re.match(fiction_regex, genre_fict_nonfict):
+                    genre_fict_nonfict = input("Is this genre best classified as Fiction or Non-Fiction: ").title()
+                    describe_genre = input("Please enter a brief description of this genre: ")
+                    if re.match(genre_regex, new_genre_name) and re.match(fiction_regex, genre_fict_nonfict):
+                        if new_genre_name in fetch_genre_names():
+                            print("It appears this genre has already been added to the Genres table")
+                        else:
                             adding_genre = Genre(new_genre_name, genre_fict_nonfict, describe_genre)
-                            genre_list.append(adding_genre)
-                            print(f"{new_genre_name} has been added to the genre list.")
-                    elif new_genre_name in genre_name_list:
-                        print("This genre has already been added to our genre list. Please choose options 2 or 3 to read more about it.")
+                            adding_genre.add_genre_to_table()
+                            genre_object_set_name_list = [genre.get_genre_name() for genre in genre_object_set]
+                            if new_genre_name not in genre_object_set_name_list:
+                                genre_object_set.add(adding_genre)
+                    else:
+                        print("Please ensure a valid input for genre name and Fiction/Non-Fiction classification.")
                 elif genre_menu_input == "2":
                     genre_input_descript = input("For which genre do you wish to update its description: ").title()
                     if re.match(genre_regex, genre_input_descript):
-                        try:
-                            for genre in genre_list:
-                                if genre_input_descript == genre.get_genre_name():
-                                    new_description = input("Please enter your updated description here: ")
-                                    genre.set_description(new_description)
-                                    print(f"The genre, {genre.get_genre_name()} has been updated to have the following description: {new_description}")
-                                else:
-                                    print("Please ensure the genre you wish to update has been already added to the list")
-                        except IndexError:
-                            print("Please ensure this genre has been added to the genre list before attempting to edit its description")
+                        if genre_input_descript in fetch_genre_names():
+                            new_description = input("Please enter your updated description here: ")
+                            edit_genre_descript_id = fetch_genre_id(genre_input_descript)
+                            edit_descript_genre_object = get_genre_object_from_table(edit_genre_descript_id)
+                            edit_descript_genre_object.update_genre_description(edit_genre_descript_id, new_description)
+                            print(f"The genre, {edit_descript_genre_object.get_genre_name()} has been updated to have the following description: {new_description}")
+                        else:
+                            print("Please ensure the genre you wish to update has been already added to the database")
+                    else:
+                        print("Please ensure valid formatting of genre inputs.")
                 elif genre_menu_input == "3":
                     search_genre_name = input("For which genre do you wish to see its details: ").title()
                     if re.match(genre_regex, search_genre_name):
-                        try:
-                            for genre in genre_list:
-                                if search_genre_name == genre.get_genre_name():
-                                    print("\n")
-                                    genre.display_genre_details()
-                        except IndexError:
-                            print("Please ensure genre you are searching for has already been added to the genre list")
+                        if search_genre_name in fetch_genre_names():
+                            search_genre_id = fetch_genre_id(search_genre_name)
+                            search_genre_object = get_genre_object_from_table(search_genre_id)
+                            search_genre_object.display_genre_details()
+                        else:
+                            print("Please ensure the genre you are searching for has been added to the database already.")
+                    else:
+                        print("Please ensure valid input for genre name.")
                 elif genre_menu_input == "4":
-                    for index, genre in enumerate(genre_list, 1):
-                        print(f"\n{index}:"), genre.display_genre_details()
+                    list_of_genre_objects = []
+                    for genre_id in fetch_genre_id_tup():
+                        genre_object = get_genre_object_from_table(genre_id)
+                        list_of_genre_objects.append(genre_object)
+                    for index, genre in enumerate(list_of_genre_objects, 1):
+                        print(f"{str(index)}:"), genre.display_genre_details()
                 elif genre_menu_input == "5":
                     break
                 else:
@@ -363,15 +381,18 @@ def genre_operations_menu():
         except Exception as e:
             print(f"Error: {e}")
 '''
-The genre_operations_menu() function is a while loop with 5 choices, the first which is to add a new genre. This works by asking for a new genre name input which we convert to title case. After validating this input
-via regex I use a list comprehension to store a list of each genre name using the .get_genre_name() method. If the user input is not in this list comprehension, we then take an input for fiction vs. non fiction and  validat ethat input via regex.
-I then take an input for the genre's description and use those three inputs to instaniate a Genre class object stored at adding_genre variable. We then append that variable to the global genre list.
-I also include logic to return a print statement if the user tries to add the same genre more than once. In option 2 the user can update the genre's description by first entering which genre they wish to edit.
-After validating that input via regex and starting a try block we loop through the genre list and try to find a match for the user input to a genre object's .get_genre_name() method. If there is a match we prompt the user to enter in their new edited description, and then use the set_description setter method to update
-that object. The result is printed in the terminal and ane else statement, as well as an IndexError exception handle any attempt to edit a genre that is not found in our list. Option 3 prompts the user for a genre name for which they are searching for to display its details.
-After validating that input via regex in a try block, we once again loop through the genre list and try to match the user input to the genre class's name getter method. Once there is a match we run the .display_genre_details() method on it and if there is not match we have an exception
-for an IndexError prompting the user to ensure that they are searching for a Genre object that has already been added to the list. Option 4 once again uses the enumerate function to loop through the entire list, numbeirng it while running the display_genre_details() method on each object.
-Option 5 breaks this while loop and returns the user to the main menu.
+The genre operations menu uses the global genre object set as well as the input_regex, genre regex, and fiction regex variables. If the user chooses to add a new genre they are prompted for inputs for name, fiction or non-fiction and description.
+We then verify that we are not entering a duplicate by using our fetch and check functions, and if its is a new genre we run regex verification on the name and fiction/non-fiction input.
+We then instantiate a new Genre object to have access to the methods from the three inputs, then calling the .add_genre_to_table() method on our new object. I then verify with a list comprehension
+that our Genre object does not already have a duplicate in our genre_object_set using the name getter method on each object in the set. If there is no duplicate we use the .add() method to add it to our local object set.
+In option two I take an input to identify which genre we are updating. I then check that it pases regex verification and that this genre name is in our database. If it is I take an input for a new description, fetch the genre_id based off the name entered in the input
+and retrieve the genre object from the table that matches the genre_id we fetched. With this object now instatiated locally I run the update_genre_description method using the genre_id input we retrieved and the new description entered into our input.
+In option 3 we can search for a genre by name and then dispaly its details. Much like the book, author, and user menus we use fetchers and regex to verify that our user's input is valid and once we do that 
+we retrieve the auto-incremented genre ID that matches the user's name input. We then use that ID to call our get_genre_object_from_table() function that unpacks a fetchall tuple into a genre object.
+We then call the .display_genre_details method on our new object.
+Option 3 instantiates a temporary list of genre objects that we will populate by looping through all of our auto-incremented genre ID's, using the get_genre_object_from_table() fucntion on them and then appending those genre_objects to the list.
+Then we run another for loop, this time as an enumerate function where we run through the list we just populated starting at 1 and calling the .display_genre_details() method on each object.
+
 '''
 
 

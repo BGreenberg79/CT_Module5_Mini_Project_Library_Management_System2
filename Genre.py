@@ -49,7 +49,7 @@ class Genre:
         if conn is not None:
             try:
                 cursor = conn.cursor()
-                query = "INSERT INTO Genres (name, fict_or_nonfit, description) VALUES (%s, %s, %s)"
+                query = "INSERT INTO Genres (name, fict_or_nonfict, description) VALUES (%s, %s, %s)"
                 values_tuple = (self.get_genre_name(), self.get_fict_or_nonfict, self.get_description())
                 cursor.execute(query, values_tuple)
                 conn.commit()
@@ -61,16 +61,38 @@ class Genre:
                 conn.close()
 
 
+    def update_genre_description(self, genre_id, new_genre_description):
+        conn = connect_database()
+        if conn is not None:
+            try:
+                self.set_description(new_genre_description)
+                cursor = conn.cursor()
+                query = "UPDATE Genres SET description=%s WHERE id=%s"
+                values_tuple = (self.get_description(), genre_id)
+                cursor.execute(query, values_tuple)
+                conn.commit()
+            except Exception as e:
+                print(f"Error: {e}")
+            finally:
+                cursor.close()
+                conn.close()
 
 
     def display_genre_details(self):
-        print(f"Genre Name: {self.get_genre_name()}\nGenre Type: {self.get_fict_or_nonfict()}\nDescripton: {self.get_description()}")
-        print("Books from this Genre:")
-        if not self.get_books_in_genre():
-            print("No books have been added with this genre yet")
-        else:
-            for book in self.get_books_in_genre():
-                print(book)
+        conn = connect_database()
+        if conn is not None:
+            try:
+                cursor = conn.cursor()
+                query = "SELECT g.name AS GenreName, g.fict_or_nonfict AS GenreType, g.description AS Description, b.title AS BooksInThisGenre FROM Genres g, Books b WHERE g.id = b.genre_id"
+                cursor.execute(query)
+                print("Genre Details:")
+                for row in cursor.fetchall():
+                    print(row)
+            except Exception as e:
+                print(f"Error: {e}")
+            finally:
+                cursor.close()
+                conn.close()
 
 '''
 The init method for the Genre class, we instantiate objets with variabeles for genre_name, fiction or nonfiction, and description, as well as an empty list books in genre. I then have getters

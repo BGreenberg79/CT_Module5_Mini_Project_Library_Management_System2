@@ -1,6 +1,8 @@
 from connect_mysql import connect_database
 from Book import Book
 from User import User
+from Author import Author
+from Genre import Genre
 
 def fetch_genre_names():
     conn = connect_database()
@@ -44,7 +46,7 @@ def fetch_author_list():
         try:
             author_list = []
             cursor = conn.cursor()
-            query = "SELECT name, home_country FROM Authors"
+            query = "SELECT name, home_country, date_of_birth FROM Authors"
             cursor.execute(query)
             for row in cursor.fetchall():
                 author_list.append(row)
@@ -77,6 +79,101 @@ def fetch_author_id(author_name, home_country):
             cursor.close()
             conn.close()
             return id_string
+
+def fetch_author_id_name_only(author_name):
+    conn = connect_database()
+    if conn is not None:
+        try:
+            id_tuple = ()
+            id_string = ""
+            cursor = conn.cursor()
+            query = "SELECT DISTINCT id FROM Authors WHERE name = %s"
+            input_tuple = (author_name,)
+            cursor.execute(query, input_tuple)
+            for id in cursor.fetchall():
+                id_tuple += id
+            for item in id_tuple:
+                id_string += item
+            id_string.strip()
+        except Exception as e:
+            print(f"Error: {e}")
+        finally:
+            cursor.close()
+            conn.close()
+            return id_string
+
+
+def get_author_object_from_table(author_id):
+    conn = connect_database()
+    if conn is not None:
+        try:
+            cursor = conn.cursor()
+            query = "SELECT name, home_country, date_of_birth FROM Authors WHERE id = %s"
+            author_id_tup = (author_id,)
+            cursor.execute(query, author_id_tup)
+            for row in cursor.fetchall():
+                author_name, author_home_country, author_dob = row
+            author_from_table = Author(author_name, author_home_country, author_dob)
+        except Exception as e:
+            print(f"Error: {e}")
+        finally:
+            cursor.close()
+            conn.close()
+            return author_from_table
+        
+def fetch_author_names():
+    conn = connect_database()
+    if conn is not None:
+        try:
+            author_name_tuple = ()
+            cursor = conn.cursor()
+            query = "SELECT name FROM AUthors"
+            cursor.execute(query)
+            for name in cursor.fetchall():
+                author_name_tuple += name
+            ""
+        except Exception as e:
+            print(f"Error: {e}")
+        finally:
+            cursor.close()
+            conn.close()
+            return author_name_tuple
+
+def fetch_author_id_tup():
+    conn = connect_database()
+    if conn is not None:
+        try:
+            author_id_tup = ()
+            cursor = conn.cursor()
+            query = "SELECT id FROM Authors"
+            cursor.execute(query)
+            for row in cursor.fetchall():
+                author_id_tup += row
+            ""
+        except Exception as e:
+            print(f"Error: {e}")
+        finally:
+            cursor.close()
+            conn.close()
+            return author_id_tup
+        
+def fetch_genre_id_tup():
+    conn = connect_database()
+    if conn is not None:
+        try:
+            genre_id_tup = ()
+            cursor = conn.cursor()
+            query = "SELECT id from Genres"
+            cursor.execute(query)
+            for row in cursor.fetchall():
+                genre_id_tup += row
+            ""
+        except Exception as e:
+            print(f"Error: {e}")
+        finally:
+            cursor.close()
+            conn.close()
+            return genre_id_tup
 
 
 def fetch_genre_id(genre_name):
@@ -319,3 +416,21 @@ def get_user_object_from_table(user_id):
             cursor.close()
             conn.close()
             return user_from_table
+        
+def get_genre_object_from_table(genre_id):
+    conn = connect_database()
+    if conn is not None:
+        try:
+            cursor = conn.cursor()
+            query = "SELECT name, fict_or_nonfict, description FROM Genres WHERE id = %s"
+            genre_id_tup = (genre_id,)
+            cursor.execute(query, genre_id_tup)
+            for row in cursor.fetchall():
+                genre_name, genre_type, genre_descript = row
+            genre_from_table = Genre(genre_name, genre_type, genre_descript)
+        except Exception as e:
+            print(f"Error: {e}")
+        finally:
+            cursor.close()
+            conn.close()
+            return genre_from_table

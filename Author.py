@@ -57,11 +57,18 @@ class Author():
                 conn.close()
     
     
-    # def display_biography(self):
-    #     print(f"Name: {self.get_author_name()}\nCountry of Birth: {self.get_home_country()}\nDate of Birth: {self.get_date_of_birth()}")
-    #     print("List of Books Authored in our Library:")
-    #     if not self.get_authored_books():
-    #         print("No books have been added for this author yet")
-    #     else:
-    #         for book in self.get_authored_books():
-    #             print(book.get_title())
+    def display_biography(self):
+        conn = connect_database()
+        if conn is not None:
+            try:
+                cursor = conn.cursor()
+                query = "SELECT a.name AS AuthorName, a.home_country AS HomeCountry, a.date_of_birth AS AuthorDateOfBirth, b.title AS BooksWrittenByAuthor FROM Authors a, Books b WHERE a.id = b.author_id"
+                cursor.execute(query)
+                print("Author Details:")
+                for row in cursor.fetchall():
+                    print(row)
+            except Exception as e:
+                print(f"Error: {e}")
+            finally:
+                cursor.close()
+                conn.close()
