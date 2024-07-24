@@ -51,7 +51,7 @@ class User():
         if conn is not None:
             try:
                 cursor = conn.cursor()
-                query = "SELECT u.id AS UserID, u.name AS Name, u.card_number AS CardNumber, b.title AS BorrowedBookTitle, bb.borrow_date AS Borrow Date, bb.return_date AS ReturnDate FROM Users u, Books b, BorrowedBooks bb WHERE bb.user_id=u.id AND bb.book_id=b.id"
+                query = "SELECT u.id AS UserID, u.name AS Name, u.card_number AS CardNumber, b.title AS BorrowedBookTitle, bb.borrow_date AS BorrowDate, bb.return_date AS ReturnDate FROM Users u, Books b, BorrowedBooks bb WHERE bb.user_id=u.id AND bb.book_id=b.id"
                 cursor.execute(query)
                 print("User Details:")
                 for row in cursor.fetchall():
@@ -61,3 +61,10 @@ class User():
             finally:
                 cursor.close()
                 conn.close()
+
+'''
+The User class instantiates objects protected attributes for name and card number that match it's table columns. We have getters and setters for each attribute. We also have an add to table
+method that uses the INSERT INTO and VALUES syntax for an SQL query that will use cursor and conn methods to execute the query and commit the addition to our database. This method is in a try/except/finally block to catch any errors and close out our cursor and connection.
+Lastly the display_user_details method uses a SELECT query in SQL to retrieve rows with UserID, Name, CardNumber, BorrowedBookTitle, BorrowDate, and ReturnDate from the Users, Books, and BorrowedBooks tables where the book and user id's match in all tables.
+We then use a for loop and the fetchall method to print all of the queries results once executed, before closing the connection
+'''

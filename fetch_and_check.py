@@ -434,3 +434,10 @@ def get_genre_object_from_table(genre_id):
             cursor.close()
             conn.close()
             return genre_from_table
+        
+'''
+This module contains a litany of functions that returns tuples, strings, and objects for various attributes we need when looking up ID's from inputs, seeing if a user input is alredy in our database or not,
+or unpacking tuples from our database into Class Objects for easy access to methods in our main module. This module was needed as I realized that the only way to avoid duplicates in our databse each time the user accesses the database in a new session would be
+through SELECT and fetch all functions that could be called without a class object to start with. Notably every function in this module ends with a return statement fter the connections have all been closed, and not a single one of these functions has the conn.commit() syntax
+as all actual updates or insertions into our database are handled by class methods. As those methods handle actual manipuation of our database it was imperative to have a logically strong way to retrieve existing class objects from our database.
+'''

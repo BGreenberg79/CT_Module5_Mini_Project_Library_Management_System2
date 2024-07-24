@@ -150,5 +150,10 @@ class Book(Genre):
                 conn.close()
 
 '''
--
+The Book class instantiates objects protected attributes for title, author, isbn, publication date, and availability. We have getters and setters for each attribute. We also have an add to database
+method that uses the INSERT INTO and VALUES syntax for an SQL query that will use cursor and conn methods to execute the query and commit the addition to our database. This method is in a try/except/finally block to catch any errors and close out our cursor and connection.
+The display_details method uses a SELECT query in SQL to retrieve rows with title, author name, genre name, ISBN, publication date, and availability from the Books, Genres, and Authors tables where the author id's and genre id's match in each of their tables.
+We then use a for loop and the fetchall method to print all of the queries results, before closing the connection.
+Lastly we have methods for borrow_books and return_books that starts by ussing a getter to verify the book has the appropriate starting availability boolean. It then uses a setter to change the availability to its new status. We then use an Update syntax to update the books table to change the availability status and INSERT INTO syntax to create an entry in BorrowedBooks table
+if we are borrowing a book. If we are simply returning a book we still Update the Books table, but instead of using the INSERT INTO syntax for BorrowedBooks we just use a second UPDATE query to add the return date to the appropriate BorrowedBooks row.
 '''

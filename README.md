@@ -4,7 +4,7 @@ Mini-Project for Coding Temple
 
 ____
 ## Project Overview
- 
+This program builds upon my earlier Library Management System this time implementing SQL to store our results in a database. Our Library Database houses tables for Books, BorrowedBooks, Users, Authors, and Genres. These tables are modified via methods from the OOP class structure we built during our first version of this program. In addition to the modules for the main program and each of our four Class types: Book, Genre, User, & Author; we have an SQL module that shows the syntax for how we created our database structure and a fetch_and_check module that is used in the logic of the main program to retrieve check if user inputs are entered correctly for new entries into the database and instantiates class objects when retrieving existing information from the database to display it or update it.  
 
 ____
 ## Installation Instructions

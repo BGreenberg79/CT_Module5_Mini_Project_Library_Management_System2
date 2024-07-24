@@ -72,3 +72,10 @@ class Author():
             finally:
                 cursor.close()
                 conn.close()
+
+'''
+The author class instantiates objects protected attributes for name, home country, and date of birth that match it's table columns. We have getters and setters for each attribute. We also have an add to table
+method that uses the INSERT INTO and VALUES syntax for an SQL query that will use cursor and conn methods to execute the query and commit the addition to our database. This method is in a try/except/finally block to catch any errors and close out our cursor and connection.
+Lastly the display_biography uses a SELECT query in SQL to retrieve rows with name, home country, date of birth, and books written by author from the Books and Authors tables where the author id's match in both tables.
+We then use a for loop and the fetchall method to print all of the queries results, before closing the connection
+'''

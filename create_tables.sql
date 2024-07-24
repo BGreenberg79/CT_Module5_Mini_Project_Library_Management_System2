@@ -38,4 +38,7 @@ return_date DATE);
 
 ALTER TABLE Authors 
 ADD date_of_birth DATE NOT NULL;
---
+/* 
+This is SQL syntax that was used to Create our Library Management System database as well as all 5 of its tables. 
+Lastly I have one ALTER TABLE statement to ADD a date_of_birth column to the Authors table
+*/
